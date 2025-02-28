@@ -4,7 +4,6 @@ WORKDIR /app
 
 COPY . ./
 
-RUN dotnet clean
 RUN dotnet restore
 #It would be safer to do it in CI/CD.
 RUN dotnet build "./tests/RatingService.Tests/RatingService.Tests.csproj" -c Debug
