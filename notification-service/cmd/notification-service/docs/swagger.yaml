@@ -1,0 +1,60 @@
+openapi: 3.0.0
+info:
+  title: Notification Service API
+  version: "1.0"
+  description: >
+   This service consumes "rating-created" messages coming from Kafka and returns notifications based on provider.
+servers:
+  - url: http://localhost:8090
+paths:
+  /notifications/{providerId}:
+    get:
+      summary: Get notifications by provider
+      description: Retrieves new notifications for the specified provider and clears them afterwards
+      operationId: getNotificationsByProvider
+      tags:
+        - notifications
+      parameters:
+        - name: providerId
+          in: path
+          description: ID of the provider
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '400':
+          description: Invalid providerId
+components:
+  schemas:
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Internal identifier
+          example: 1
+        providerId:
+          type: integer
+          description: Provider identifier
+          example: 101
+        score:
+          type: integer
+          description: Rating score
+          example: 5
+        comment:
+          type: string
+          description: Optional comment
+          example: "Excellent service!"
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp of rating creation
+          example: "2025-02-23T10:05:31.482767Z"

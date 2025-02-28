@@ -1,0 +1,15 @@
+# Bu Dockerfile yalnızca migrasyon çalıştırmak için ayrı bir “migrator” imajı oluşturacak.
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS migrator
+
+WORKDIR /app
+
+COPY . .
+
+RUN dotnet restore "RatingService/RatingService.csproj"
+RUN dotnet build "RatingService/RatingService.csproj" -c Release
+
+RUN dotnet tool install --global dotnet-ef --version 9.*
+ENV PATH="$PATH:/root/.dotnet/tools"
+
+CMD ["dotnet", "ef", "database", "update", "--project", "RatingService/RatingService.csproj", "--startup-project", "RatingService/RatingService.csproj"]

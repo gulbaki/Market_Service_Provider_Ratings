@@ -1,0 +1,88 @@
+version: "3.8"
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ALLOW_ANONYMOUS_LOGIN: "yes"
+
+  kafka:
+    image: bitnami/kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+      KAFKA_LISTENERS: PLAINTEXT_DOCKER://0.0.0.0:9092,PLAINTEXT_LOCAL://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_DOCKER://kafka:9092,PLAINTEXT_LOCAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_DOCKER:PLAINTEXT,PLAINTEXT_LOCAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_DOCKER
+    depends_on:
+      - zookeeper
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "54325:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: RatingsDb
+
+  rating-service:
+    build:      
+      context: ./rating-service
+      dockerfile: Dockerfile 
+    container_name: rating-service
+    ports:
+      - "8181:8181"
+    environment:
+      - ASPNETCORE_URLS=http://+:8181
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=RatingsDb;Username=postgres;Password=postgres
+      - Kafka__BootstrapServers=kafka:9092
+      - Kafka__TopicName=rating-created
+    depends_on:
+      - kafka
+      - postgres
+  rating-service-migrator:
+    build:
+      context: ./rating-service
+      dockerfile: Dockerfile.migrator  
+    container_name: rating-service-migrator
+    depends_on:
+      - postgres
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=RatingsDb;Username=postgres;Password=postgres
+  
+  notification-service:
+    build: ./notification-service
+    container_name: notification-service
+    ports:
+      - "9191:9191"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - KAFKA_TOPIC=rating-created
+      - KAFKA_GROUP_ID=notification-group
+    depends_on:
+      - kafka
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+      - zookeeper
+    ports:
+      - "8080:8082"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
