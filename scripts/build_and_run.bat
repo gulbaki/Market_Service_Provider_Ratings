@@ -24,6 +24,6 @@ docker compose run --rm rating-service-migrator
 echo All done!
 echo Use "docker compose logs -f" to follow service logs.
 echo Available services:
-echo  - Rating Service:       http://localhost:8181
-echo  - Notification Service: http://localhost:9191
+echo  - Rating Service:       http://localhost:8181/swagger/index.html
+echo  - Notification Service: http://localhost:9191/swagger/index.html
 echo  - Kafka UI:            http://localhost:8082
