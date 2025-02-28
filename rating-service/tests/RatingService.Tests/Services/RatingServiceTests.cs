@@ -1,7 +1,4 @@
-using System;
-using System.Threading.Tasks;
-using Xunit;
-using RatingService.Services;
+
 using RatingService.Repositories;
 using RatingService.Models;
 using Moq;

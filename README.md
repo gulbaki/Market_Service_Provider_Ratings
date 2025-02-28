@@ -25,8 +25,6 @@ The system allows customers to submit ratings for service providers. When a new 
 - [Configuration](#configuration)  
 - [Project Structure](#project-structure)  
 - [Future Improvements](#future-improvements)  
-- [License](#license)
-
 ---
 
 ## Overview
@@ -37,7 +35,7 @@ The primary goal of this project is to demonstrate a simple **service marketplac
 - A new **rating** triggers an event publication to **Kafka**.  
 - The **Notification Service** (in Go) listens to these events, stores them in memory, and offers a REST endpoint to retrieve notifications for a given provider.
 
-No authentication is required for the scope of this demo. Data is persisted in a PostgreSQL database for ratings, and notifications are stored in-memory. For real-world scalability or durability requirements, you could adapt the in-memory storage to a more robust solution (e.g., Redis, PostgreSQL, etc.).
+Data is persisted in a PostgreSQL database for ratings, and notifications are stored in-memory. For real-world scalability or durability requirements, we could adapt the in-memory storage to a more robust solution (e.g., Redis etc.).
 
 ---
 
@@ -175,10 +173,7 @@ Here is a more detailed sequence diagram using a standard flow:
    chmod +x scripts/*.sh
 
    # Build Docker images for both services
-   ./scripts/build-all.sh
-
-   # Or simply start up with docker-compose (which also runs build):
-   ./scripts/run.sh
+   ./scripts/build_and_run.sh
    ```
 
    Alternatively, you can manually run:
@@ -287,36 +282,36 @@ You can modify the `.NET` or Go code to handle these differently if desired.
 
 ## Future Improvements
 
-Below are some recommended enhancements and design considerations. We designed the solution to be **simple**, so some production-level features are either omitted or simplified. If quality was partially sacrificed for speed (e.g., no persistent notifications, no auth), these choices are documented here along with possible improvements.
+Below are some recommended enhancements and design considerations. We designed the solution to be **simple**, so some production-level features are either omitted or simplified. If quality was partially sacrificed for speed (e.g., no persistent notifications), these choices are documented here along with possible improvements.
+
+- **Use Redis/NoSQL/RDBMS**: Instead of in-memory storage, we can leverage Redis, a NoSQL database, or an RDBMS to enable horizontal scaling and persistent data.
+- **Load Balancing**: Run multiple instances of the Notification Service behind a load balancer or ingress to handle high traffic.
+- **Rate Limiting & Caching**: Manage heavy polling requests more efficiently and prevent resource exhaustion.
+- **Push Mechanism (Optional)**: Replace or complement polling with real-time push notifications for immediate delivery.
+- **Enhanced Observability**: Incorporate logging, metrics, and tracing to pinpoint performance bottlenecks.
+- **Advanced Error Handling**: Implement retry policies, dead-letter queues, and other mechanisms for fault tolerance.
+
+These improvements make the Notification Service more robust and scalable in **large-scale** environments. Although our prototype (in-memory + single instance) is sufficient for basic needs, such enhancements become crucial if we assume **multiple clients or services** are polling frequently at high volume.
+
+### Additional Considerations
 
 1. **Integration Tests with Testcontainers**  
-   - Using libraries such as [Testcontainers for .NET](https://github.com/testcontainers/testcontainers-dotnet) or [testcontainers-go](https://github.com/testcontainers/testcontainers-go) enables spinning up ephemeral containers for PostgreSQL, Kafka, etc., during integration tests. This helps ensure your tests run against real infrastructure without manual local configuration.
+   Leverage Testcontainers to spin up ephemeral instances of PostgreSQL, Kafka, etc., for real-world integration tests without manual local setups.
 
 2. **CI/CD Pipeline**  
-   - Implement a pipeline (e.g., GitHub Actions, GitLab CI) to build, test, and deploy the services automatically.  
-   - Automate code quality checks (linters, code coverage) and container image publishing (Docker Hub, GitHub Packages).  
-   - Consider semantic versioning or automated releases for consistent version tagging.
+   Set up a pipeline (e.g., GitHub Actions) to automate builds, tests, deployments, and versioning (with semantic release or similar).
 
 3. **Document Main Design Decisions**  
-   - **Sustainability**: Each microservice is self-contained, with minimal coupling (Kafka for asynch messaging).  
-   - **Reliability**: Kafka ensures event-driven communication. However, in-memory notifications could be lost on service restart—use persistent storage if reliability is a must.  
-   - **Scalability**: .NET and Go both scale well in container-based deployments. You can run multiple instances of each service behind a load balancer. Kafka can be scaled horizontally by adding more brokers.  
-   - **Simplicity vs. Quality**: We focused on clarity and brevity. Features like authentication, advanced validations, or a persistent store for notifications were omitted to keep the example straightforward.
+   Note key trade-offs (e.g., in-memory notifications are lost on restart) and justify them in terms of sustainability, reliability, and scalability.
 
 4. **Handling an Untrusted Network**  
-   - If the network is considered unreliable or untrusted, enable TLS/SSL for Kafka and for the REST endpoints.  
-   - Consider implementing a service mesh or an API gateway that handles certificate management, mutual TLS, and service discovery.
+   Enable TLS/SSL for Kafka and REST endpoints if the network is untrusted. Consider using a service mesh or API gateway to manage certificates and security policies.
 
 5. **High Traffic Considerations**  
-   - If the Notification Service is expected to serve many other services and handle **large request volumes**, use a distributed cache or a fast data store (e.g., Redis) instead of in-memory maps.  
-   - Log aggregation (e.g., ELK stack, Grafana Loki) is crucial for diagnosing issues in a high-traffic environment.  
-   - Implement backpressure and concurrency control in both the .NET producer and the Go consumer to avoid message overload.
+   For very large request volumes, adopt distributed caches or high-performance data stores. Add logging/monitoring solutions (e.g., ELK stack) for better diagnostics.
 
 6. **Monitoring & Observability**  
-   - Integrate Prometheus and Grafana, or use an existing platform for metrics (CPU, memory, request latency, Kafka topic lag).  
-   - Structured logging with correlation IDs across microservices helps trace requests end-to-end.
+   Integrate tools such as Prometheus and Grafana, and use correlation IDs for full traceability across microservices.
 
 7. **Other Reliability Enhancements**  
-   - Consider **dead-letter queues** (DLQ) in Kafka for messages that cannot be processed.  
-   - Retry logic when the Notification Service fails to store notifications or read from Kafka.  
-   - If notifications are business-critical, store them in a persistent DB so they are not lost on crashes or restarts.
+   Consider **dead-letter queues** (DLQ) for unprocessable messages, retry mechanisms, and persistent storage if losing notifications is unacceptable in case of failures.
