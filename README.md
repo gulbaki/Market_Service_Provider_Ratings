@@ -287,7 +287,6 @@ Below are some recommended enhancements and design considerations. We designed t
 - **Use Redis/NoSQL/RDBMS**: Instead of in-memory storage, we can leverage Redis, a NoSQL database, or an RDBMS to enable horizontal scaling and persistent data.
 - **Load Balancing**: Run multiple instances of the Notification Service behind a load balancer or ingress to handle high traffic.
 - **Rate Limiting & Caching**: Manage heavy polling requests more efficiently and prevent resource exhaustion.
-- **Push Mechanism (Optional)**: Replace or complement polling with real-time push notifications for immediate delivery.
 - **Enhanced Observability**: Incorporate logging, metrics, and tracing to pinpoint performance bottlenecks.
 - **Advanced Error Handling**: Implement retry policies, dead-letter queues, and other mechanisms for fault tolerance.
 
